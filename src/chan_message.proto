@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package netpong.protos;
+
+message ChanMessage {
+    uint32 local_sequence = 1;
+    uint32 remote_sequence = 2;
+    uint32 number = 3;
+}
