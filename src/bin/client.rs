@@ -1,5 +1,5 @@
 extern crate ggez;
-
+extern crate netpong_rs;
 
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf;
@@ -28,9 +28,14 @@ impl EventHandler for ClientState {
 
 
 fn main() {
+    let m = netpong_rs::net::Channel::new().make_message(5);
+
+    println!("{:?}", m);
+
     let cb = ContextBuilder::new("netpong", "vitorhnn")
         .window_setup(conf::WindowSetup::default().title("netpong"))
         .window_mode(conf::WindowMode::default().dimensions(640, 480));
+
 
     let mut ctx = cb.build().expect("failed to build ggez context");
 
