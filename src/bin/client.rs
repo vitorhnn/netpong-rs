@@ -6,8 +6,22 @@ use ggez::conf;
 use ggez::event;
 use ggez::event::{EventHandler};
 use ggez::timer;
+use ggez::graphics;
+
+use netpong_rs::game;
+use netpong_rs::protos::chan_message::Message;
+use netpong_rs::protos::ServerSendChallenge;
 
 struct ClientState {
+    game_state: game::GameState
+}
+
+impl ClientState {
+    fn new() -> ClientState {
+        ClientState {
+            game_state: game::GameState::new()
+        }
+    }
 }
 
 impl EventHandler for ClientState {
@@ -15,20 +29,23 @@ impl EventHandler for ClientState {
         const FPS_TARGET: u32 = 60;
 
         while timer::check_update_time(ctx, FPS_TARGET) {
-            // update state
+            self.game_state.update();
         }
 
         Ok(())
     }
 
-    fn draw(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::clear(ctx);
+        graphics::rectangle(ctx, graphics::DrawMode::Fill, graphics::Rect::new(self.game_state.ball_pos.x, self.game_state.ball_pos.y, 50.0, 50.0))?;
+        graphics::present(ctx);
         Ok(())
     }
 }
 
 
 fn main() {
-    let m = netpong_rs::net::Channel::new().make_message(5);
+    let m = netpong_rs::net::Channel::new().make_message(Message::ServerChallenge(ServerSendChallenge{ challenge: 42 }));
 
     println!("{:?}", m);
 
@@ -39,7 +56,7 @@ fn main() {
 
     let mut ctx = cb.build().expect("failed to build ggez context");
 
-    let mut state = ClientState{};
+    let mut state = ClientState::new();
 
-    event::run(&mut ctx, &mut state);
+    event::run(&mut ctx, &mut state).expect("ded");
 }

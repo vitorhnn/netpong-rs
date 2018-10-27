@@ -1,4 +1,6 @@
 use protos::ChanMessage;
+use protos::chan_message::Message;
+use protos::ClientAskChallenge;
 
 pub struct Channel {
     local_sequence: u32,
@@ -13,11 +15,11 @@ impl Channel {
         }
     }
 
-    pub fn make_message(&self, number: u32) -> ChanMessage {
+    pub fn make_message(&self, message: Message) -> ChanMessage {
         let mut msg = ChanMessage::default();
         msg.sequence = self.local_sequence;
         msg.ack = self.remote_sequence;
-        msg.number = number;
+        msg.message = Some(message);
 
         msg
     }

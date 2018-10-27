@@ -2,8 +2,20 @@ syntax = "proto3";
 
 package netpong.protos;
 
+message ClientAskChallenge {
+
+}
+
+message ServerSendChallenge {
+    uint64 challenge = 1;
+}
+
 message ChanMessage {
     uint32 sequence = 1;
     uint32 ack = 2;
-    uint32 number = 3;
+
+    oneof message {
+        ClientAskChallenge client_challenge = 16;
+        ServerSendChallenge server_challenge = 17;
+    }
 }
