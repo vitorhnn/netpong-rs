@@ -10,11 +10,23 @@ message ServerSendChallenge {
     uint64 challenge = 1;
 }
 
+message ServerSendWorld {
+    float pos_x = 1;
+    float pos_y = 2;
+    
+    float vel_x = 3;
+    float vel_y = 4;
+
+    float p1_x = 5;
+    float p2_x = 6;
+}
+
 message ChanMessage {
     uint32 sequence = 1;
     uint32 ack = 2;
 
     oneof message {
+        ServerSendWorld server_send_world = 3;
         ClientAskChallenge client_challenge = 16;
         ServerSendChallenge server_challenge = 17;
     }

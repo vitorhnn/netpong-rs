@@ -1,6 +1,9 @@
 extern crate ggez;
 extern crate netpong_rs;
 
+use std::io;
+use std::net::{UdpSocket, SocketAddr};
+
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf;
 use ggez::event;
@@ -9,17 +12,24 @@ use ggez::timer;
 use ggez::graphics;
 
 use netpong_rs::game;
+use netpong_rs::net::Channel;
 use netpong_rs::protos::chan_message::Message;
 use netpong_rs::protos::ServerSendChallenge;
 
 struct ClientState {
-    game_state: game::GameState
+    game_state: game::GameState,
+    chan: Channel,
+    socket: UdpSocket,
 }
 
 impl ClientState {
     fn new() -> ClientState {
+        let socket = UdpSocket::bind("127.0.0.1:3001").unwrap();
+        socket.set_nonblocking(true).unwrap();
         ClientState {
-            game_state: game::GameState::new()
+            game_state: game::GameState::new(),
+            chan: Channel::new(),
+            socket,
         }
     }
 }
@@ -27,6 +37,18 @@ impl ClientState {
 impl EventHandler for ClientState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         const FPS_TARGET: u32 = 60;
+
+        let mut buf = [0; 1024];
+        loop {
+            match self.socket.recv_from(&mut buf) {
+                Ok(n) => {
+                    let msg = self.chan.decode_message(&buf).unwrap();
+                    println!("{:?}", msg);
+                },
+                Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => break,
+                Err(_) => panic!("io error while receiving from socket")
+            }
+        }
 
         while timer::check_update_time(ctx, FPS_TARGET) {
             self.game_state.update();
@@ -45,13 +67,9 @@ impl EventHandler for ClientState {
 
 
 fn main() {
-    let m = netpong_rs::net::Channel::new().make_message(Message::ServerChallenge(ServerSendChallenge{ challenge: 42 }));
-
-    println!("{:?}", m);
-
     let cb = ContextBuilder::new("netpong", "vitorhnn")
         .window_setup(conf::WindowSetup::default().title("netpong"))
-        .window_mode(conf::WindowMode::default().dimensions(640, 480));
+        .window_mode(conf::WindowMode::default().dimensions(300, 300));
 
 
     let mut ctx = cb.build().expect("failed to build ggez context");
