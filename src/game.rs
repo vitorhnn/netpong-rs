@@ -54,4 +54,11 @@ impl GameState {
             p2_x: 0.0 // STUB
         }
     }
+
+    pub fn from_protobuf(proto: &ServerSendWorld) -> GameState {
+        GameState {
+            ball_pos: Point2f::new(proto.pos_x, proto.pos_y),
+            ball_vel: Vec2f::new(proto.vel_x, proto.vel_y),
+        }
+    }
 }

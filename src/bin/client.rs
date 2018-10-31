@@ -14,7 +14,6 @@ use ggez::graphics;
 use netpong_rs::game;
 use netpong_rs::net::Channel;
 use netpong_rs::protos::chan_message::Message;
-use netpong_rs::protos::ServerSendChallenge;
 
 struct ClientState {
     game_state: game::GameState,
@@ -41,9 +40,13 @@ impl EventHandler for ClientState {
         let mut buf = [0; 1024];
         loop {
             match self.socket.recv_from(&mut buf) {
-                Ok(n) => {
-                    let msg = self.chan.decode_message(&buf).unwrap();
-                    println!("{:?}", msg);
+                Ok((bytes, _addr)) => {
+                    let filled_buf = &buf[..bytes];
+                    if let Some(msg) = self.chan.decode_message(&filled_buf) {
+                        if let Some(Message::ServerSendWorld(w)) = msg.message {
+                            self.game_state = game::GameState::from_protobuf(&w);
+                        }
+                    }
                 },
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => break,
                 Err(_) => panic!("io error while receiving from socket")
@@ -51,7 +54,7 @@ impl EventHandler for ClientState {
         }
 
         while timer::check_update_time(ctx, FPS_TARGET) {
-            self.game_state.update();
+            //self.game_state.update();
         }
 
         Ok(())
