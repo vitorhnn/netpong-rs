@@ -5,22 +5,30 @@ use protos::ServerSendWorld;
 type Point2f = nalgebra::Point2<f32>;
 type Vec2f = nalgebra::Vector2<f32>;
 
-pub const GAME_WIDTH: f32 = 300.0;
-pub const GAME_HEIGHT: f32 = 300.0;
+pub const GAME_WIDTH: f32 = 900.0;
+pub const GAME_HEIGHT: f32 = 700.0;
 
-pub const BALL_WIDTH: f32 = 50.0;
-pub const BALL_HEIGHT: f32 = 50.0;
+pub const BALL_WIDTH: f32 = 20.0;
+pub const BALL_HEIGHT: f32 = 20.0;
 
 pub struct GameState {
     pub ball_pos: Point2f,
     ball_vel: Vec2f,
+    pub paddle1_pos: Point2f,
+    paddle1_vel: Vec2f,
+    pub paddle2_pos: Point2f,
+    paddle2_vel: Vec2f,
 }
 
 impl GameState {
     pub fn new() -> GameState {
         GameState {
-            ball_pos: Point2f::new(0.0, 0.0),
-            ball_vel: Vec2f::new(1.0, 1.0)
+            ball_pos: Point2f::new(440.0, 340.0),
+            ball_vel: Vec2f::new(1.0, 1.0),
+            paddle1_pos: Point2f::new(10.0, 250.0),
+            paddle1_vel: Vec2f::new(0.0, 0.0),
+            paddle2_pos: Point2f::new(870.0, 250.0),
+            paddle2_vel: Vec2f::new(0.0, 0.0)
         }
     }
 
@@ -50,8 +58,10 @@ impl GameState {
             pos_y: self.ball_pos.y,
             vel_x: self.ball_vel.x,
             vel_y: self.ball_vel.y,
-            p1_x: 0.0, // STUB
-            p2_x: 0.0 // STUB
+            p1_y: self.paddle1_pos.y,
+            p1_dy: self.paddle1_vel.y,
+            p2_y: self.paddle2_pos.y,
+            p2_dy: self.paddle2_vel.y,
         }
     }
 
@@ -59,6 +69,29 @@ impl GameState {
         GameState {
             ball_pos: Point2f::new(proto.pos_x, proto.pos_y),
             ball_vel: Vec2f::new(proto.vel_x, proto.vel_y),
+            paddle1_pos: Point2f::new(10.0, proto.p1_y),
+            paddle1_vel: Vec2f::new(0.0, proto.p1_dy),
+            paddle2_pos: Point2f::new(10.0, proto.p1_y),
+            paddle2_vel: Vec2f::new(0.0, proto.p1_dy)
+        }
+    }
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Debug)]
+pub struct InputState {
+    yaxis: f32,
+}
+
+impl Default for InputState {
+    fn default() -> Self {
+        InputState {
+            yaxis: 0.0,
         }
     }
 }

@@ -5,6 +5,7 @@ use prost::Message;
 
 use std::io::Cursor;
 
+#[derive(Default)]
 pub struct Channel {
     local_sequence: u32,
     remote_sequence: u32,
@@ -28,11 +29,15 @@ impl Channel {
         msg
     }
 
-    pub fn decode_message(&mut self, buf: &[u8]) -> Option<ChanMessage> {
+    pub fn decode_message(&mut self, buf: &[u8]) -> Option<chan_message::Message> {
         let msg = ChanMessage::decode(&mut Cursor::new(buf)).unwrap();
 
-        self.remote_sequence = msg.sequence;
-        Some(msg)
+        if msg.sequence < self.remote_sequence {
+            // old message. useless now
+            None
+        } else {
+            self.remote_sequence = msg.sequence;
+            msg.message
+        }
     }
 }
-

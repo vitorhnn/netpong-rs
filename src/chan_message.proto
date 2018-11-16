@@ -2,12 +2,16 @@ syntax = "proto3";
 
 package netpong.protos;
 
-message ClientAskChallenge {
-
+message ClientConnect {
+    bool spectating = 1;
 }
 
-message ServerSendChallenge {
-    uint64 challenge = 1;
+message ServerConnect {
+    uint32 index = 1;
+}
+
+message ServerIsFull {
+
 }
 
 message ServerSendWorld {
@@ -17,8 +21,14 @@ message ServerSendWorld {
     float vel_x = 3;
     float vel_y = 4;
 
-    float p1_x = 5;
-    float p2_x = 6;
+    float p1_y = 5;
+    float p1_dy = 6;
+    float p2_y = 7;
+    float p2_dy = 8;
+}
+
+message ClientInput {
+    float yaxis = 1;
 }
 
 message ChanMessage {
@@ -27,7 +37,9 @@ message ChanMessage {
 
     oneof message {
         ServerSendWorld server_send_world = 3;
-        ClientAskChallenge client_challenge = 16;
-        ServerSendChallenge server_challenge = 17;
+        ClientInput client_input = 4;
+        ServerIsFull server_full = 16;
+        ClientConnect client_connect = 17;
+        ServerConnect server_connect = 18;
     }
 }
