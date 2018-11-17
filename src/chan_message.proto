@@ -23,8 +23,10 @@ message ServerSendWorld {
 
     float p1_y = 5;
     float p1_dy = 6;
-    float p2_y = 7;
-    float p2_dy = 8;
+    float p1_iy = 7;
+    float p2_y = 8;
+    float p2_dy = 9;
+    float p2_iy = 10;
 }
 
 message ClientInput {

@@ -51,17 +51,26 @@ impl ServerState {
         }
     }
 
+
     fn handle_packet(&mut self, &addr: &SocketAddr, packet: &[u8]) {
         println!("received packet");
-        if let Some(ref client) = self.player_one {
+        if let Some(ref mut client) = self.player_one {
             if client.addr == addr {
-                return;
+                if let Some(msg) = client.chan.decode_message(packet) {
+                    if let ChanMessage::ClientInput(ci) = msg {
+                        self.game_state.p1_input.yaxis = ci.yaxis;
+                    }
+                }
             }
         }
 
-        if let Some(ref client) = self.player_two {
+        if let Some(ref mut client) = self.player_two {
             if client.addr == addr {
-                return;
+                if let Some(msg) = client.chan.decode_message(packet) {
+                    if let ChanMessage::ClientInput(ci) = msg {
+                        self.game_state.p2_input.yaxis = ci.yaxis;
+                    }
+                }
             }
         }
 
@@ -134,6 +143,20 @@ fn main() {
         while lag > UPDATE_FREQUENCY {
             state.game_state.update();
             lag -= UPDATE_FREQUENCY;
+        }
+
+        if let Some(ref mut p1) = state.player_one {
+            let msg = p1.chan.make_message(ChanMessage::ServerSendWorld(state.game_state.as_protobuf()));
+            let mut buf = Vec::with_capacity(msg.encoded_len());
+            msg.encode(&mut buf).unwrap();
+            state.socket.send_to(&buf, p1.addr).unwrap();
+        }
+
+        if let Some(ref mut p2) = state.player_two {
+            let msg = p2.chan.make_message(ChanMessage::ServerSendWorld(state.game_state.as_protobuf()));
+            let mut buf = Vec::with_capacity(msg.encoded_len());
+            msg.encode(&mut buf).unwrap();
+            state.socket.send_to(&buf, p2.addr).unwrap();
         }
 
         for spectator in &mut state.spectators {

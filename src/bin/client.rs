@@ -9,7 +9,7 @@ use std::net::{UdpSocket, SocketAddr};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf;
 use ggez::event;
-use ggez::event::{EventHandler};
+use ggez::event::{EventHandler, Keycode, Mod};
 use ggez::timer;
 use ggez::graphics;
 
@@ -20,7 +20,7 @@ use prost::Message;
 use netpong_rs::game;
 use netpong_rs::net::Channel;
 use netpong_rs::protos::chan_message::Message as ChanMessage;
-use netpong_rs::protos::ClientConnect;
+use netpong_rs::protos::{ClientConnect, ClientInput};
 
 
 #[derive(Debug, StructOpt)]
@@ -75,6 +75,7 @@ impl EventHandler for ClientState {
         }
 
         while timer::check_update_time(ctx, FPS_TARGET) {
+            println!("{:?}", self.game_state.paddle2_pos);
             self.game_state.update();
         }
 
@@ -85,8 +86,36 @@ impl EventHandler for ClientState {
         graphics::clear(ctx);
         graphics::rectangle(ctx, graphics::DrawMode::Fill, graphics::Rect::new(self.game_state.ball_pos.x, self.game_state.ball_pos.y, 20.0, 20.0))?;
         graphics::rectangle(ctx, graphics::DrawMode::Fill, graphics::Rect::new(self.game_state.paddle1_pos.x, self.game_state.paddle1_pos.y, 30.0, 90.0))?;
+        graphics::rectangle(ctx, graphics::DrawMode::Fill, graphics::Rect::new(self.game_state.paddle2_pos.x, self.game_state.paddle2_pos.y, 30.0, 90.0))?;
         graphics::present(ctx);
         Ok(())
+    }
+
+    fn key_down_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        let input = match self.player {
+            Some(0) => &mut self.game_state.p1_input,
+            Some(1) => &mut self.game_state.p2_input,
+            _ => panic!("wut"),
+        };
+
+        match keycode {
+            Keycode::Up => input.yaxis = 1.0,
+            Keycode::Down => input.yaxis = -1.0,
+            _ => (),
+        }
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        let input = match self.player {
+            Some(0) => &mut self.game_state.p1_input,
+            Some(1) => &mut self.game_state.p2_input,
+            _ => panic!("wut"),
+        };
+
+        match keycode {
+            Keycode::Up | Keycode::Down => input.yaxis = 0.0,
+            _ => (),
+        }
     }
 }
 
@@ -105,7 +134,7 @@ fn main() {
 
     let mut state = ClientState::new(opt.addr);
 
-    let connect_msg = state.chan.make_message(ChanMessage::ClientConnect(ClientConnect{ spectating: opt.spectate }));
+    let connect_msg = state.chan.make_message(ChanMessage::ClientConnect(ClientConnect { spectating: opt.spectate }));
     let mut buf = Vec::with_capacity(connect_msg.encoded_len());
     connect_msg.encode(&mut buf).unwrap();
     state.socket.send_to(&buf, opt.addr).unwrap();
