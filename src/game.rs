@@ -15,11 +15,9 @@ pub struct GameState {
     pub ball_pos: Point2f,
     ball_vel: Vec2f,
     pub paddle1_pos: Point2f,
-    paddle1_vel: Vec2f,
+    pub paddle1_vel: Vec2f,
     pub paddle2_pos: Point2f,
-    paddle2_vel: Vec2f,
-    pub p1_input: InputState,
-    pub p2_input: InputState,
+    pub paddle2_vel: Vec2f,
 }
 
 impl GameState {
@@ -31,14 +29,10 @@ impl GameState {
             paddle1_vel: Vec2f::new(0.0, 0.0),
             paddle2_pos: Point2f::new(860.0, 250.0),
             paddle2_vel: Vec2f::new(0.0, 0.0),
-            p1_input: InputState::default(),
-            p2_input: InputState::default(),
         }
     }
 
     pub fn update(&mut self) {
-        self.paddle1_vel.y = self.p1_input.yaxis * -3.0;
-
         self.ball_pos += self.ball_vel;
         self.paddle1_pos += self.paddle1_vel;
         self.paddle2_pos += self.paddle2_vel;
@@ -68,10 +62,8 @@ impl GameState {
             vel_y: self.ball_vel.y,
             p1_y: self.paddle1_pos.y,
             p1_dy: self.paddle1_vel.y,
-            p1_iy: self.p1_input.yaxis,
             p2_y: self.paddle2_pos.y,
             p2_dy: self.paddle2_vel.y,
-            p2_iy: self.p2_input.yaxis,
         }
     }
 
@@ -83,8 +75,6 @@ impl GameState {
             paddle1_vel: Vec2f::new(0.0, proto.p1_dy),
             paddle2_pos: Point2f::new(860.0, proto.p2_y),
             paddle2_vel: Vec2f::new(0.0, proto.p2_dy),
-            p1_input: InputState { yaxis: proto.p1_iy },
-            p2_input: InputState { yaxis: proto.p2_iy },
         }
     }
 }
@@ -95,15 +85,3 @@ impl Default for GameState {
     }
 }
 
-#[derive(Debug)]
-pub struct InputState {
-    pub yaxis: f32,
-}
-
-impl Default for InputState {
-    fn default() -> Self {
-        InputState {
-            yaxis: 0.0,
-        }
-    }
-}

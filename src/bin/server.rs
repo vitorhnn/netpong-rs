@@ -1,6 +1,7 @@
 extern crate netpong_rs;
 extern crate prost;
 
+use std::error::Error;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{Instant, Duration};
 use std::thread::sleep;
@@ -39,26 +40,25 @@ struct ServerState {
 }
 
 impl ServerState {
-    fn new() -> ServerState {
-        let socket = UdpSocket::bind("127.0.0.1:3000").unwrap();
-        socket.set_nonblocking(true).unwrap();
-        ServerState {
+    fn new() -> io::Result<ServerState> {
+        let socket = UdpSocket::bind("0.0.0.0:3000")?;
+        socket.set_nonblocking(true)?;
+        Ok(ServerState {
             game_state: game::GameState::new(),
             socket,
             player_one: None,
             player_two: None,
             spectators: Vec::new(),
-        }
+        })
     }
 
 
     fn handle_packet(&mut self, &addr: &SocketAddr, packet: &[u8]) {
-        println!("received packet");
         if let Some(ref mut client) = self.player_one {
             if client.addr == addr {
                 if let Some(msg) = client.chan.decode_message(packet) {
                     if let ChanMessage::ClientInput(ci) = msg {
-                        self.game_state.p1_input.yaxis = ci.yaxis;
+                        self.game_state.paddle1_vel.y = ci.yaxis * -3.0;
                     }
                 }
             }
@@ -68,13 +68,13 @@ impl ServerState {
             if client.addr == addr {
                 if let Some(msg) = client.chan.decode_message(packet) {
                     if let ChanMessage::ClientInput(ci) = msg {
-                        self.game_state.p2_input.yaxis = ci.yaxis;
+                        self.game_state.paddle2_vel.y = ci.yaxis * -3.0;
                     }
                 }
             }
         }
 
-        if let Some(_) = self.spectators.iter().find(|&x| x.addr == addr) {
+        if self.spectators.iter().any(|x| x.addr == addr) {
             return;
         }
 
@@ -113,10 +113,12 @@ impl ServerState {
     }
 }
 
-fn main() {
-    println!("netpong server starting up or something");
+fn main() -> Result<(), Box<dyn Error>> {
+    println!("netpong server starting up");
 
-    let mut state = ServerState::new();
+    let mut state = ServerState::new()?;
+
+    println!("listening on {}", state.socket.local_addr()?);
 
     let mut previous = Instant::now();
     let mut lag = Duration::new(0, 0);

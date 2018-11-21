@@ -31,20 +31,35 @@ struct Opt {
     spectate: bool,
 }
 
+#[derive(Debug)]
+pub struct InputState {
+    pub yaxis: f32,
+}
+
+impl Default for InputState {
+    fn default() -> Self {
+        InputState {
+            yaxis: 0.0,
+        }
+    }
+}
+
 struct ClientState {
     game_state: game::GameState,
     chan: Channel,
     remote_addr: SocketAddr,
     socket: UdpSocket,
+    input_state: InputState,
     player: Option<u32>,
 }
 
 impl ClientState {
     fn new(remote_addr: SocketAddr) -> ClientState {
-        let socket = UdpSocket::bind("127.0.0.1:3001").unwrap();
+        let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
         ClientState {
             game_state: game::GameState::new(),
             chan: Channel::new(),
+            input_state: InputState::default(),
             player: None,
             socket,
             remote_addr,
@@ -56,27 +71,39 @@ impl EventHandler for ClientState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         const FPS_TARGET: u32 = 60;
 
-        loop {
-            let mut buf = [0; 1024];
-            match self.socket.recv_from(&mut buf) {
-                Ok((bytes, addr)) => {
-                    if addr == self.remote_addr {
-                        let filled_buf = &buf[..bytes];
-                        if let Some(msg) = self.chan.decode_message(&filled_buf) {
-                            if let ChanMessage::ServerSendWorld(w) = msg {
-                                self.game_state = game::GameState::from_protobuf(&w);
+        while timer::check_update_time(ctx, FPS_TARGET) {
+            let yaxis = self.input_state.yaxis;
+
+            match self.player {
+                Some(0) => self.game_state.paddle1_vel.y = self.input_state.yaxis * -3.0,
+                Some(1) => self.game_state.paddle2_vel.y = self.input_state.yaxis * -3.0,
+                _ => panic!("wut")
+            }
+
+            let ipt_msg = self.chan.make_message(ChanMessage::ClientInput(ClientInput { yaxis }));
+            let mut buf = Vec::with_capacity(ipt_msg.encoded_len());
+            ipt_msg.encode(&mut buf).unwrap();
+            self.socket.send_to(&buf, self.remote_addr).unwrap();
+
+            self.game_state.update();
+
+            loop {
+                let mut buf = [0; 1024];
+                match self.socket.recv_from(&mut buf) {
+                    Ok((bytes, addr)) => {
+                        if addr == self.remote_addr {
+                            let filled_buf = &buf[..bytes];
+                            if let Some(msg) = self.chan.decode_message(&filled_buf) {
+                                if let ChanMessage::ServerSendWorld(w) = msg {
+                                    self.game_state = game::GameState::from_protobuf(&w);
+                                }
                             }
                         }
-                    }
-                },
-                Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => break,
-                Err(_) => panic!("io error while receiving from socket")
+                    },
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => break,
+                    Err(_) => panic!("io error while receiving from socket")
+                }
             }
-        }
-
-        while timer::check_update_time(ctx, FPS_TARGET) {
-            println!("{:?}", self.game_state.paddle2_pos);
-            self.game_state.update();
         }
 
         Ok(())
@@ -92,28 +119,16 @@ impl EventHandler for ClientState {
     }
 
     fn key_down_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
-        let input = match self.player {
-            Some(0) => &mut self.game_state.p1_input,
-            Some(1) => &mut self.game_state.p2_input,
-            _ => panic!("wut"),
-        };
-
         match keycode {
-            Keycode::Up => input.yaxis = 1.0,
-            Keycode::Down => input.yaxis = -1.0,
+            Keycode::Up => self.input_state.yaxis = 1.0,
+            Keycode::Down => self.input_state.yaxis = -1.0,
             _ => (),
         }
     }
 
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
-        let input = match self.player {
-            Some(0) => &mut self.game_state.p1_input,
-            Some(1) => &mut self.game_state.p2_input,
-            _ => panic!("wut"),
-        };
-
         match keycode {
-            Keycode::Up | Keycode::Down => input.yaxis = 0.0,
+            Keycode::Up | Keycode::Down => self.input_state.yaxis = 0.0,
             _ => (),
         }
     }
