@@ -11,7 +11,12 @@ pub const GAME_HEIGHT: f32 = 700.0;
 pub const BALL_WIDTH: f32 = 20.0;
 pub const BALL_HEIGHT: f32 = 20.0;
 
+pub const PADDLE_WIDTH: f32 = 20.0;
+pub const PADDLE_HEIGHT: f32= 90.0;
+
 pub struct GameState {
+    pub p1_score: u32,
+    pub p2_score: u32,
     pub ball_pos: Point2f,
     ball_vel: Vec2f,
     pub paddle1_pos: Point2f,
@@ -24,12 +29,34 @@ impl GameState {
     pub fn new() -> GameState {
         GameState {
             ball_pos: Point2f::new(440.0, 340.0),
-            ball_vel: Vec2f::new(1.0, 1.0),
+            ball_vel: Vec2f::new(2.0, 2.0),
             paddle1_pos: Point2f::new(10.0, 250.0),
             paddle1_vel: Vec2f::new(0.0, 0.0),
             paddle2_pos: Point2f::new(860.0, 250.0),
             paddle2_vel: Vec2f::new(0.0, 0.0),
+            p1_score: 0,
+            p2_score: 0,
         }
+    }
+
+    fn ball_collide(&self, min_point: Point2f, max_point: Point2f) -> bool {
+        if self.ball_pos.y + BALL_HEIGHT < min_point.y {
+            return false;
+        }
+
+        if self.ball_pos.y > max_point.y {
+            return false;
+        }
+
+        if self.ball_pos.x + BALL_WIDTH < min_point.x {
+            return false;
+        }
+
+        if self.ball_pos.x > max_point.x {
+            return false;
+        }
+
+        true
     }
 
     pub fn update(&mut self) {
@@ -37,12 +64,31 @@ impl GameState {
         self.paddle1_pos += self.paddle1_vel;
         self.paddle2_pos += self.paddle2_vel;
 
-        if self.ball_pos.x + BALL_WIDTH > GAME_WIDTH {
+
+        let p1_min = self.paddle1_pos;
+        let p1_max = self.paddle1_pos + Vec2f::new(PADDLE_WIDTH, PADDLE_HEIGHT);
+
+        if self.ball_collide(p1_min, p1_max) {
             self.ball_vel.x *= -1.0;
         }
 
-        if self.ball_pos.x < 0.0 {
+        let p2_min = self.paddle2_pos;
+        let p2_max = self.paddle2_pos + Vec2f::new(0.0, PADDLE_HEIGHT);
+
+        if self.ball_collide(p2_min, p2_max) {
             self.ball_vel.x *= -1.0;
+        }
+
+        if self.ball_pos.x + BALL_WIDTH > GAME_WIDTH {
+            self.p1_score += 1;
+            self.ball_pos = Point2f::new(440.0, 340.0);
+            self.ball_vel = Vec2f::new(-2.0, -2.0);
+        }
+
+        if self.ball_pos.x < 0.0 {
+            self.p2_score += 1;
+            self.ball_pos = Point2f::new(440.0, 340.0);
+            self.ball_vel = Vec2f::new(2.0, 2.0);
         }
 
         if self.ball_pos.y + BALL_HEIGHT > GAME_HEIGHT {
@@ -64,6 +110,8 @@ impl GameState {
             p1_dy: self.paddle1_vel.y,
             p2_y: self.paddle2_pos.y,
             p2_dy: self.paddle2_vel.y,
+            p1_score: self.p1_score,
+            p2_score: self.p2_score,
         }
     }
 
@@ -75,6 +123,8 @@ impl GameState {
             paddle1_vel: Vec2f::new(0.0, proto.p1_dy),
             paddle2_pos: Point2f::new(860.0, proto.p2_y),
             paddle2_vel: Vec2f::new(0.0, proto.p2_dy),
+            p1_score: proto.p1_score,
+            p2_score: proto.p2_score,
         }
     }
 }

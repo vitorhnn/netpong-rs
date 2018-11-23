@@ -25,6 +25,9 @@ message ServerSendWorld {
     float p1_dy = 6;
     float p2_y = 8;
     float p2_dy = 9;
+
+    uint32 p1_score = 10;
+    uint32 p2_score = 11;
 }
 
 message ClientInput {
