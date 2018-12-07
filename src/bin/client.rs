@@ -77,13 +77,16 @@ impl EventHandler for ClientState {
             match self.player {
                 Some(0) => self.game_state.paddle1_vel.y = self.input_state.yaxis * -3.0,
                 Some(1) => self.game_state.paddle2_vel.y = self.input_state.yaxis * -3.0,
+                None => {},
                 _ => panic!("wut")
             }
 
-            let ipt_msg = self.chan.make_message(ChanMessage::ClientInput(ClientInput { yaxis }));
-            let mut buf = Vec::with_capacity(ipt_msg.encoded_len());
-            ipt_msg.encode(&mut buf).unwrap();
-            self.socket.send_to(&buf, self.remote_addr).unwrap();
+            if self.player.is_some() {
+                let ipt_msg = self.chan.make_message(ChanMessage::ClientInput(ClientInput { yaxis }));
+                let mut buf = Vec::with_capacity(ipt_msg.encoded_len());
+                ipt_msg.encode(&mut buf).unwrap();
+                self.socket.send_to(&buf, self.remote_addr).unwrap();
+            }
 
             self.game_state.update();
 
@@ -168,6 +171,7 @@ fn main() {
                             },
                             ChanMessage::ServerFull(_) => {
                                 println!("server full");
+                                return;
                             },
                             ChanMessage::ServerSendWorld(_) => {
                                 if !opt.spectate {

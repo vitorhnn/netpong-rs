@@ -1,6 +1,6 @@
 use ggez::nalgebra;
 
-use protos::ServerSendWorld;
+use crate::protos::ServerSendWorld;
 
 type Point2f = nalgebra::Point2<f32>;
 type Vec2f = nalgebra::Vector2<f32>;

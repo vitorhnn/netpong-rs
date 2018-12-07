@@ -2,6 +2,7 @@
 name = "netpong-rs"
 version = "0.1.0"
 authors = ["Victor Hermann Chiletto <victor.vasconceloschiletto@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 ggez = "0.4"

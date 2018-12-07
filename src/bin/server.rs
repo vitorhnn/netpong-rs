@@ -87,21 +87,21 @@ impl ServerState {
                     println!("accepted {} as a spectator", addr);
                 } else {
                     if self.player_one.is_none() {
-                        let mut response = chan.make_message(ChanMessage::ServerConnect(ServerConnect{index: 0}));
+                        let response = chan.make_message(ChanMessage::ServerConnect(ServerConnect{index: 0}));
                         let mut buf = Vec::with_capacity(response.encoded_len());
                         response.encode(&mut buf).unwrap();
                         self.socket.send_to(&buf, addr).unwrap();
                         self.player_one = Some(Client::new(chan, addr));
                         println!("accepted {} as p1", addr);
                     } else if self.player_two.is_none() {
-                        let mut response = chan.make_message(ChanMessage::ServerConnect(ServerConnect{index: 1}));
+                        let response = chan.make_message(ChanMessage::ServerConnect(ServerConnect{index: 1}));
                         let mut buf = Vec::with_capacity(response.encoded_len());
                         response.encode(&mut buf).unwrap();
                         self.socket.send_to(&buf, addr).unwrap();
                         self.player_two = Some(Client::new(chan, addr));
                         println!("accepted {} as p2", addr);
                     } else {
-                        let mut response = chan.make_message(ChanMessage::ServerFull(ServerIsFull{}));
+                        let response = chan.make_message(ChanMessage::ServerFull(ServerIsFull{}));
                         let mut buf = Vec::with_capacity(response.encoded_len());
                         response.encode(&mut buf).unwrap();
                         self.socket.send_to(&buf, addr).unwrap();

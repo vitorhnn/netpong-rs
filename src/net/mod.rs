@@ -1,5 +1,4 @@
-use protos::ChanMessage;
-use protos::chan_message;
+use crate::protos::{chan_message, ChanMessage};
 
 use prost::Message;
 
